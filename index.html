@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Earning Zone - X | Official Platform</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <style>
+        :root {
+            --primary: #00ffa3; --secondary: #0a0b10; 
+            --card-bg: #15161c; --glass-border: rgba(255, 255, 255, 0.1);
+            --text-color: #ffffff; --text-muted: #8e8e93; --gold: #ffcc00;
+            --verify-blue: #3897f0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { background: var(--secondary); color: var(--text-color); padding-bottom: 90px; overflow-x: hidden; }
+
+        /* ================= AUTH SCREEN ================= */
+        .auth-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--secondary); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 25px; overflow-y: auto; }
+        .auth-container { background: transparent; width: 100%; max-width: 400px; padding: 10px; text-align: center; }
+        
+        .auth-header-graphic { margin-bottom: 30px; position: relative; display: flex; justify-content: center; align-items: center; }
+        .graphic-glow { position: absolute; width: 150px; height: 150px; background: var(--primary); border-radius: 50%; filter: blur(50px); opacity: 0.2; }
+        .graphic-icon-wrap { position: relative; z-index: 1; background: linear-gradient(145deg, #1c1d26, #15161c); width: 100px; height: 100px; border-radius: 30px; display: flex; justify-content: center; align-items: center; border: 2px solid rgba(0, 255, 163, 0.3); box-shadow: 0 10px 20px rgba(0,0,0,0.3), inset 0 0 15px rgba(0, 255, 163, 0.1); color: var(--primary); font-size: 3rem; animation: logoFloat 3s infinite ease-in-out; }
+        .floating-deco { position: absolute; color: var(--gold); opacity: 0.7; font-size: 1.2rem; }
+        .deco-1 { top: -10px; right: -10px; animation: logoFloat 4s infinite reverse ease-in-out; }
+        .deco-2 { bottom: 10px; left: -20px; animation: logoFloat 5s infinite ease-in-out; }
+
+        @keyframes logoFloat { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-10px) rotate(5deg); } }
+
+        .auth-input { width: 100%; background: #1a1b24; border: 1px solid rgba(255,255,255,0.03); padding: 16px 20px; border-radius: 14px; color: white; outline: none; font-size: 0.95rem; margin-bottom: 15px; transition: 0.3s; text-align: left; }
+        .auth-input:focus { border-color: var(--primary); background: #15161c; }
+        .hidden { display: none !important; }
+
+        /* Header */
+        .top-header { background: rgba(10, 11, 16, 0.95); padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); position: sticky; top: 0; z-index: 1000; }
+        .logo-area { display: flex; align-items: center; gap: 8px; }
+        .logo-text { font-weight: 700; color: var(--primary); font-size: 1.1rem; text-transform: uppercase; }
+        .verify-badge { color: var(--verify-blue); font-size: 1rem; }
+
+        /* Notice Board */
+        .notice-container { background: #1c1d26; border: 1px solid var(--glass-border); padding: 10px 15px; border-radius: 15px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; overflow: hidden; }
+        .notice-container i { color: var(--primary); font-size: 1.2rem; min-width: 20px; }
+        .notice-container marquee { font-size: 0.85rem; color: #fff; font-weight: 500; flex: 1; width: 100%; }
+
+        /* Live Popup Design */
+        .live-popup { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); background: linear-gradient(145deg, #15161c, #1a1b24); border: 1px solid rgba(255,255,255,0.05); padding: 10px 20px; border-radius: 30px; display: flex; align-items: center; gap: 10px; z-index: 10005; width: 90%; max-width: 380px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); transition: top 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+        .live-popup.show { top: 20px; }
+        .popup-icon { background: var(--primary); color: #000; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; }
+        .popup-text { font-size: 0.75rem; color: #fff; }
+
+        /* Floating Live Chat Icon */
+        .floating-chat { position: fixed; bottom: 100px; right: 20px; background: #1c1d26; width: 55px; height: 55px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 2px solid var(--primary); box-shadow: 0 8px 20px rgba(0, 255, 163, 0.4); z-index: 10000; cursor: pointer; animation: floatChat 3s infinite ease-in-out; }
+        .floating-chat img { width: 35px; height: 35px; }
+        .online-dot { position: absolute; top: 2px; right: 2px; width: 14px; height: 14px; background: #00ffa3; border-radius: 50%; border: 2px solid #1c1d26; box-shadow: 0 0 5px #00ffa3; }
+        @keyframes floatChat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+        /* DAILY CHECK-IN MODAL */
+        .daily-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 11, 16, 0.85); backdrop-filter: blur(5px); z-index: 20000; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: 0.4s; }
+        .daily-modal-overlay.active { opacity: 1; visibility: visible; }
+        .daily-modal { background: var(--card-bg); border: 1px solid var(--primary); padding: 30px 20px; border-radius: 24px; text-align: center; width: 90%; max-width: 320px; transform: scale(0.8) translateY(20px); transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 20px 40px rgba(0, 255, 163, 0.15); }
+        .daily-modal-overlay.active .daily-modal { transform: scale(1) translateY(0); }
+        .daily-icon { font-size: 3.5rem; color: var(--gold); margin-bottom: 15px; animation: bounce 2s infinite ease-in-out; }
+        @keyframes bounce { 0%, 20%, 50%, 80%, 100% {transform: translateY(0);} 40% {transform: translateY(-15px);} 60% {transform: translateY(-7px);} }
+
+        /* PLAN BUY MODAL */
+        .plan-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 11, 16, 0.85); backdrop-filter: blur(5px); z-index: 20005; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: 0.3s; }
+        .plan-modal-overlay.active { opacity: 1; visibility: visible; }
+        .plan-modal { background: var(--card-bg); padding: 25px; border-radius: 24px; width: 90%; max-width: 360px; transform: scale(0.8) translateY(20px); transition: 0.3s; position: relative; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 15px 35px rgba(0,0,0,0.5); }
+        .plan-modal-overlay.active .plan-modal { transform: scale(1) translateY(0); }
+        .close-modal { position: absolute; top: 15px; right: 20px; color: var(--text-muted); font-size: 1.2rem; cursor: pointer; }
+        .payment-method-box { background: rgba(255,255,255,0.02); padding: 10px 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border: 1px solid transparent; }
+        .payment-method-box .method-icon { width: 35px; height: 35px; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: 1.1rem; color: #fff; }
+        .method-details { flex: 1; margin-left: 12px; text-align: left; }
+        .method-details p { font-size: 0.6rem; font-weight: 700; margin-bottom: 2px; }
+        .method-details h4 { font-size: 0.95rem; color: #fff; }
+        .copy-btn { background: transparent; padding: 5px 10px; border-radius: 8px; font-size: 0.75rem; cursor: pointer; font-weight: 600; }
+
+        .page { display: none; padding: 20px; animation: fadeIn 0.4s ease-in-out; }
+        .active-page { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Dashboard Items */
+        .main-wallet-card { background: linear-gradient(135deg, #00ffa3 0%, #007e33 100%); padding: 25px; border-radius: 24px; text-align: center; box-shadow: 0 10px 25px rgba(0, 255, 163, 0.2); }
+        .sub-wallet-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; margin-bottom: 25px; }
+        .sub-wallet-card { background: #1c1d26; padding: 15px; border-radius: 20px; border: 1px solid var(--glass-border); text-align: center; display: flex; flex-direction: column; justify-content: center; }
+        .convert-btn { font-size: 0.65rem; color: var(--primary); cursor: pointer; margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px; transition: 0.3s; font-weight: 600; }
+        .convert-btn:active { opacity: 0.5; }
+        
+        .quick-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 30px; }
+        .action-item { text-align: center; cursor: pointer; }
+        .action-icon { background: #1c1d26; width: 100%; aspect-ratio: 1/1; border-radius: 18px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; color: var(--primary); font-size: 1.2rem; border: 1px solid var(--glass-border); }
+
+        /* Global Form elements */
+        .form-box { background: var(--card-bg); padding: 25px; border-radius: 24px; border: 1px solid var(--glass-border); margin-bottom: 25px; }
+        .input-label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px; margin-top: 15px; }
+        select, .custom-input { width: 100%; background: #1c1d26; border: 1px solid var(--glass-border); padding: 14px; border-radius: 14px; color: white; outline: none; font-size: 0.9rem; margin-bottom: 10px; }
+        .submit-btn { width: 100%; background: var(--primary); color: #000; padding: 16px; border: none; border-radius: 14px; font-weight: 700; cursor: pointer; margin-top: 15px; font-size: 1rem; transition: 0.3s; }
+        .submit-btn:active { transform: scale(0.98); }
+        .withdraw-confirm-btn { background: #ffcc00; }
+        .admin-number-box { background: rgba(0, 255, 163, 0.05); border: 1px dashed var(--primary); padding: 20px; border-radius: 15px; text-align: center; margin-top: 20px; margin-bottom: 20px;}
+        .admin-number-box h4 { color: var(--primary); font-size: 1.4rem; margin-bottom: 5px; }
+
+        /* History & Team Design */
+        .history-item { background: #1c1d26; padding: 16px 20px; border-radius: 16px; margin-bottom: 12px; border: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; }
+        .h-title { font-size: 0.9rem; color: #fff; font-weight: 600; }
+        .h-date { font-size: 0.65rem; color: var(--text-muted); }
+        .stat-box { background: #1c1d26; padding: 18px; border-radius: 18px; text-align: center; border: 1px solid var(--glass-border); }
+        .refer-link-team-box { background: #1c1d26; padding: 15px; border-radius: 18px; border: 1px dashed var(--primary); margin: 20px 0; text-align: center; }
+        .link-copy-container { background: rgba(0,0,0,0.2); border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+        .link-text { font-size: 0.6rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; text-align: left; }
+
+        /* Footer Nav */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 80px; background: rgba(10, 11, 16, 0.95); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--glass-border); z-index: 1001; }
+        .nav-item { text-align: center; color: var(--text-muted); flex: 1; cursor: pointer; font-size: 0.65rem; }
+        .nav-item i { font-size: 1.3rem; margin-bottom: 4px; display: block; }
+        .nav-item.active { color: var(--primary); }
+    </style>
+<link rel="me" href="https://www.blogger.com/profile/07273262713968567500" />
+<meta name='google-adsense-platform-account' content='ca-host-pub-1556223355139109'/>
+<meta name='google-adsense-platform-domain' content='blogspot.com'/>
+<!-- --><style type="text/css">@import url(//www.blogger.com/static/v1/v-css/navbar/3334278262-classic.css);
+div.b-mobile {display:none;}
+</style>
+
+</head>
+<body><script type="text/javascript">
+    function setAttributeOnload(object, attribute, val) {
+      if(window.addEventListener) {
+        window.addEventListener('load',
+          function(){ object[attribute] = val; }, false);
+      } else {
+        window.attachEvent('onload', function(){ object[attribute] = val; });
+      }
+    }
+  </script>
+<div id="navbar-iframe-container"></div>
+<script type="text/javascript" src="https://apis.google.com/js/platform.js"></script>
+<script type="text/javascript">
+      gapi.load("gapi.iframes:gapi.iframes.style.bubble", function() {
+        if (gapi.iframes && gapi.iframes.getContext) {
+          gapi.iframes.getContext().openChild({
+              url: 'https://www.blogger.com/navbar/4831674928497719451?origin\x3dhttps://bdearningzonex.blogspot.com',
+              where: document.getElementById("navbar-iframe-container"),
+              id: "navbar-iframe"
+          });
+        }
+      });
+    </script>
+
+    <div id="auth-screen" class="auth-screen">
+        <div class="auth-container">
+            
+            <div class="auth-header-graphic">
+                <div class="graphic-glow"></div>
+                <div class="graphic-icon-wrap">
+                    <i class="fas fa-gem"></i> <i class="fas fa-dollar-sign floating-deco deco-1"></i> <i class="fas fa-chart-line floating-deco deco-2"></i> </div>
+            </div>
+
+            <h2 style="color:var(--primary); text-align:center; margin-bottom:30px; font-weight:800; font-size:1.6rem; letter-spacing:1px; text-transform:uppercase; text-shadow: 0 0 10px rgba(0,255,163,0.3);">EARNING ZONE - X</h2>
+            
+            <div id="login-box">
+                <input type="email" id="l-email" class="auth-input" placeholder="Email Address">
+                <input type="password" id="l-pass" class="auth-input" placeholder="Password">
+                <button class="submit-btn" style="padding:18px; font-size:1.05rem;" onclick="login()">Login to Dashboard</button>
+                <p style="text-align:center; margin-top:25px; font-size:0.85rem; color:var(--text-muted);" onclick="toggleAuth()">Don't have an account? <span style="color:var(--primary); cursor:pointer; font-weight:600;">Create One</span></p>
+            </div>
+
+            <div id="register-box" class="hidden">
+                <input type="text" id="r-name" class="auth-input" placeholder="Full Name">
+                <input type="email" id="r-email" class="auth-input" placeholder="Email Address">
+                <input type="password" id="r-pass" class="auth-input" placeholder="Create Password (Min 6)">
+                <input type="number" id="r-ref" class="auth-input" placeholder="Referral Code (Optional)" style="color:var(--gold)" readonly>
+                <button class="submit-btn" style="padding:18px; font-size:1.05rem;" onclick="register()">Create Account</button>
+                <p style="text-align:center; margin-top:25px; font-size:0.85rem; color:var(--text-muted);" onclick="toggleAuth()">Already registered? <span style="color:var(--primary); cursor:pointer; font-weight:600;">Login Here</span></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-content" class="hidden">
+        
+        <div id="live-popup" class="live-popup">
+            <div class="popup-icon"><i class="fas fa-check"></i></div>
+            <span class="popup-text" id="popup-text">Loading...</span>
+        </div>
+
+        <div class="floating-chat" onclick="window.location.href='https://t.me/kashim_10'">
+            <div class="online-dot"></div>
+            <img src="https://img.icons8.com/fluency/48/customer-support.png" alt="Live Support">
+        </div>
+
+        <div class="top-header">
+            <div class="logo-area"><div class="logo-text">EARNING ZONE - X</div><div class="verify-badge"><i class="fas fa-check-circle"></i></div></div>
+            <i class="fas fa-headset" style="color:var(--primary); font-size:1.4rem;" onclick="window.location.href='https://t.me/kashim_10'"></i>
+        </div>
+
+        <div id="home" class="page active-page">
+            
+            <div class="notice-container">
+                <i class="fas fa-bullhorn"></i>
+                <marquee id="live-notice" behavior="scroll" direction="left" scrollamount="5">Assalamu Alaikum Everyone ❤️‍🩹 Welcome to the official website of Earning Zone X ✅</marquee>
+            </div>
+
+            <div class="main-wallet-card"><p style="font-size:0.75rem;">MAIN WALLET</p><h2 id="main-bal">৳ 0.00</h2></div>
+            <div class="sub-wallet-grid">
+                <div class="sub-wallet-card">
+                    <p style="font-size:0.6rem;">BONUS</p>
+                    <h4 id="prof-bal">৳ 0.00</h4>
+                    <div class="convert-btn" onclick="transferToMain('profitBalance')"><i class="fas fa-exchange-alt"></i> Convert</div>
+                </div>
+                <div class="sub-wallet-card">
+                    <p style="font-size:0.6rem;">REFER</p>
+                    <h4 id="ref-bal">৳ 0.00</h4>
+                    <div class="convert-btn" onclick="transferToMain('referBalance')"><i class="fas fa-exchange-alt"></i> Convert</div>
+                </div>
+            </div>
+            
+            <div class="quick-actions">
+                <div class="action-item" onclick="changeTab('deposit', document.querySelectorAll('.nav-item')[1])"><div class="action-icon"><i class="fas fa-wallet"></i></div><p>Deposit</p></div>
+                <div class="action-item" onclick="changeTab('withdraw', document.querySelectorAll('.nav-item')[1])"><div class="action-icon"><i class="fas fa-money-bill-transfer"></i></div><p>Withdraw</p></div>
+                <div class="action-item" onclick="changeTab('team', document.querySelectorAll('.nav-item')[3])"><div class="action-icon"><i class="fas fa-users"></i></div><p>Team</p></div>
+                <div class="action-item" onclick="window.location.href='https://t.me/MarketingZone_BD'"><div class="action-icon"><i class="fab fa-telegram-plane"></i></div><p>Update</p></div>
+            </div>
+
+            <!-- Investment Plans -->
+            <h3 style="color:var(--primary); font-size:1.1rem; margin-bottom:15px; margin-top:20px; text-align:center; font-weight:700;">Premium Package</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                
+                <div style="background: #1c1d26; padding: 15px; border-radius: 20px; border: 1px solid var(--glass-border); text-align: center;">
+                    <h4 style="color: #fff; font-size: 0.85rem; margin-bottom: 5px;">VIP 1</h4>
+                    <h2 style="color: var(--gold); font-size: 1.3rem; margin-bottom: 5px;">৳ 300</h2>
+                    <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 8px; margin-bottom: 12px;">
+                        <p style="font-size: 0.65rem; color: var(--primary); font-weight: 600; margin-bottom: 3px;"><i class="fas fa-calendar-alt"></i> মেয়াদ: ৩০ দিন</p>
+                        <p style="font-size: 0.65rem; color: var(--text-muted);"><i class="fas fa-coins"></i> ডেইলি ইনকাম: ৳ <span id="inc-300">15</span></p>
+                    </div>
+                    <button style="background: var(--primary); color: #000; border: none; padding: 8px 15px; border-radius: 10px; font-weight: 700; font-size: 0.75rem; width: 100%; cursor: pointer;" onclick="openPlanModal(300)">Buy Now</button>
+                </div>
+                
+                <div style="background: #1c1d26; padding: 15px; border-radius: 20px; border: 1px solid var(--glass-border); text-align: center;">
+                    <h4 style="color: #fff; font-size: 0.85rem; margin-bottom: 5px;">VIP 2</h4>
+                    <h2 style="color: var(--gold); font-size: 1.3rem; margin-bottom: 5px;">৳ 500</h2>
+                    <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 8px; margin-bottom: 12px;">
+                        <p style="font-size: 0.65rem; color: var(--primary); font-weight: 600; margin-bottom: 3px;"><i class="fas fa-calendar-alt"></i> মেয়াদ: ৩০ দিন</p>
+                        <p style="font-size: 0.65rem; color: var(--text-muted);"><i class="fas fa-coins"></i> ডেইলি ইনকাম: ৳ <span id="inc-500">25</span></p>
+                    </div>
+                    <button style="background: var(--primary); color: #000; border: none; padding: 8px 15px; border-radius: 10px; font-weight: 700; font-size: 0.75rem; width: 100%; cursor: pointer;" onclick="openPlanModal(500)">Buy Now</button>
+                </div>
+                
+                <div style="background: #1c1d26; padding: 15px; border-radius: 20px; border: 1px solid var(--glass-border); text-align: center;">
+                    <h4 style="color: #fff; font-size: 0.85rem; margin-bottom: 5px;">VIP 3</h4>
+                    <h2 style="color: var(--gold); font-size: 1.3rem; margin-bottom: 5px;">৳ 600</h2>
+                    <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 8px; margin-bottom: 12px;">
+                        <p style="font-size: 0.65rem; color: var(--primary); font-weight: 600; margin-bottom: 3px;"><i class="fas fa-calendar-alt"></i> মেয়াদ: ৩০ দিন</p>
+                        <p style="font-size: 0.65rem; color: var(--text-muted);"><i class="fas fa-coins"></i> ডেইলি ইনকাম: ৳ <span id="inc-600">30</span></p>
+                    </div>
+                    <button style="background: var(--primary); color: #000; border: none; padding: 8px 15px; border-radius: 10px; font-weight: 700; font-size: 0.75rem; width: 100%; cursor: pointer;" onclick="openPlanModal(600)">Buy Now</button>
+                </div>
+                
+                <div style="background: #1c1d26; padding: 15px; border-radius: 20px; border: 1px solid var(--glass-border); text-align: center;">
+                    <h4 style="color: #fff; font-size: 0.85rem; margin-bottom: 5px;">VIP 4</h4>
+                    <h2 style="color: var(--gold); font-size: 1.3rem; margin-bottom: 5px;">৳ 1200</h2>
+                    <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 8px; margin-bottom: 12px;">
+                        <p style="font-size: 0.65rem; color: var(--primary); font-weight: 600; margin-bottom: 3px;"><i class="fas fa-calendar-alt"></i> মেয়াদ: ৩০ দিন</p>
+                        <p style="font-size: 0.65rem; color: var(--text-muted);"><i class="fas fa-coins"></i> ডেইলি ইনকাম: ৳ <span id="inc-1200">60</span></p>
+                    </div>
+                    <button style="background: var(--primary); color: #000; border: none; padding: 8px 15px; border-radius: 10px; font-weight: 700; font-size: 0.75rem; width: 100%; cursor: pointer;" onclick="openPlanModal(1200)">Buy Now</button>
+                </div>
+                
+                <div style="background: #1c1d26; padding: 15px; border-radius: 20px; border: 1px solid var(--glass-border); text-align: center;">
+                    <h4 style="color: #fff; font-size: 0.85rem; margin-bottom: 5px;">VIP 5</h4>
+                    <h2 style="color: var(--gold); font-size: 1.3rem; margin-bottom: 5px;">৳ 1600</h2>
+                    <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 8px; margin-bottom: 12px;">
+                        <p style="font-size: 0.65rem; color: var(--primary); font-weight: 600; margin-bottom: 3px;"><i class="fas fa-calendar-alt"></i> মেয়াদ: ৩০ দিন</p>
+                        <p style="font-size: 0.65rem; color: var(--text-muted);"><i class="fas fa-coins"></i> ডেইলি ইনকাম: ৳ <span id="inc-1600">80</span></p>
+                    </div>
+                    <button style="background: var(--primary); color: #000; border: none; padding: 8px 15px; border-radius: 10px; font-weight: 700; font-size: 0.75rem; width: 100%; cursor: pointer;" onclick="openPlanModal(1600)">Buy Now</button>
+                </div>
+                
+                <div style="background: #1c1d26; padding: 15px; border-radius: 20px; border: 1px solid var(--glass-border); text-align: center;">
+                    <h4 style="color: #fff; font-size: 0.85rem; margin-bottom: 5px;">VIP 6</h4>
+                    <h2 style="color: var(--gold); font-size: 1.3rem; margin-bottom: 5px;">৳ 2000</h2>
+                    <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 8px; margin-bottom: 12px;">
+                        <p style="font-size: 0.65rem; color: var(--primary); font-weight: 600; margin-bottom: 3px;"><i class="fas fa-calendar-alt"></i> মেয়াদ: ৩০ দিন</p>
+                        <p style="font-size: 0.65rem; color: var(--text-muted);"><i class="fas fa-coins"></i> ডেইলি ইনকাম: ৳ <span id="inc-2000">100</span></p>
+                    </div>
+                    <button style="background: var(--primary); color: #000; border: none; padding: 8px 15px; border-radius: 10px; font-weight: 700; font-size: 0.75rem; width: 100%; cursor: pointer;" onclick="openPlanModal(2000)">Buy Now</button>
+                </div>
+            </div>
+
+            <!-- Plan Request History Area -->
+            <h3 style="color:var(--text-muted); font-size:0.95rem; margin-bottom:15px; text-align:center;">My Plan Requests</h3>
+            <div id="plan-history-list"></div>
+
+        </div>
+
+        <div id="deposit" class="page">
+            <h2 style="text-align:center; color:var(--primary); margin-bottom:20px;">Deposit Wallet</h2>
+            <div class="form-box">
+                <label class="input-label">Method</label>
+                <select id="method"><option>bKash (Personal)</option><option>Nagad (Personal)</option></select>
+                <div class="admin-number-box">
+                    <p style="font-size: 0.75rem; color: var(--text-muted);">Admin Number:</p>
+                    <h4 id="admin-num">01700000000</h4>
+                    <span id="copy-btn-wrap" style="color:var(--gold); font-size:0.7rem; cursor:pointer;" onclick="copyText(document.getElementById('admin-num').innerText)">Copy Number <i class="fas fa-copy"></i></span>
+                </div>
+                <input type="number" id="d-amt" class="custom-input" placeholder="Min 100">
+                <input type="text" id="d-trx" class="custom-input" placeholder="Enter TrxID">
+                <button class="submit-btn" onclick="submitDeposit()">Submit Deposit</button>
+            </div>
+            <h3 style="color:var(--text-muted); font-size:0.95rem; margin-bottom:15px; padding-left:5px;">Recent Deposits</h3>
+            <div id="dep-history-list"></div>
+        </div>
+
+        <div id="withdraw" class="page">
+            <h2 style="text-align:center; color:var(--primary); margin-bottom:20px;">Withdraw Funds</h2>
+            <div class="form-box">
+                <label class="input-label">Select Payment Method</label>
+                <select id="w-method"><option>bKash (Personal)</option><option>Nagad (Personal)</option></select>
+                <input type="text" id="w-num" class="custom-input" placeholder="017XXXXXXXX">
+                <input type="number" id="w-amt" class="custom-input" placeholder="Min 300">
+                <div class="info-card"><p><i class="fas fa-info-circle"></i> Withdraw charge 10%. Your payment will be processed within 5-30 minutes.</p></div>
+                <button class="submit-btn withdraw-confirm-btn" onclick="submitWithdraw()">Confirm Withdraw</button>
+            </div>
+            <h3 style="color:var(--text-muted); font-size:0.95rem; margin-bottom:15px; padding-left:5px;">Recent Withdrawals</h3>
+            <div id="wit-history-list"></div>
+        </div>
+
+        <div id="gift" class="page">
+            <h2 style="text-align:center; color:var(--primary); margin-bottom:20px;">Gift Code</h2>
+            <div class="form-box">
+                <label class="input-label">Enter Promo or Gift Code</label>
+                <input type="text" id="gift-code" class="custom-input" placeholder="e.g. WELCOME100">
+                <button class="submit-btn" onclick="submitGiftCode()">Claim Bonus</button>
+            </div>
+            <h3 style="color:var(--text-muted); font-size:0.95rem; margin-bottom:15px; padding-left:5px;">Recent Gift Claims</h3>
+            <div id="gift-history-list"></div>
+        </div>
+
+        <div id="team" class="page">
+            <h2 style="text-align:center; color:var(--primary); margin-bottom:20px;">My Network</h2>
+            <div class="sub-wallet-grid">
+                <div class="stat-box"><p>Total Members</p><h4 id="team-count">0</h4></div>
+                <div class="stat-box"><p>Team Earnings</p><h4 id="team-earn" style="color:var(--gold)">৳ 0.00</h4></div>
+            </div>
+            <div class="refer-link-team-box">
+                <p style="font-size:0.75rem; color:var(--primary); font-weight:600; margin-bottom: 10px;">My Referral Link</p>
+                <div class="link-copy-container">
+                    <span id="ref-link-team" class="link-text">Generating link...</span>
+                    <i class="fas fa-copy" style="color:var(--primary); cursor:pointer;" onclick="copyRef()"></i>
+                </div>
+            </div>
+            <button class="submit-btn" onclick="copyRef()">Invite Friends Now</button>
+        </div>
+
+        <div id="account" class="page">
+            <div style="text-align:center; margin-bottom:25px;">
+                <div style="width: 90px; height: 90px; background: #1c1d26; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; border: 2px solid var(--primary); color: var(--primary); font-size: 2.5rem;">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <h3 id="acc-name" style="color:var(--primary); margin-bottom:5px;">Loading...</h3>
+                <p id="acc-email" style="font-size:0.75rem; color:var(--text-muted);">loading@email.com</p>
+            </div>
+            <div style="background: var(--card-bg); border-radius: 20px; border: 1px solid var(--glass-border); overflow: hidden; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                    <span style="color: var(--text-muted); font-size: 0.85rem;">User ID</span>
+                    <span id="acc-uid" style="color: var(--gold); font-weight: 600; font-size: 0.85rem;">---</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 18px 20px;">
+                    <span style="color: var(--text-muted); font-size: 0.85rem;">Active Plan</span>
+                    <span id="acc-plan" style="color: var(--primary); font-weight: 600; font-size: 0.85rem;">Free <i class="fas fa-check-circle"></i></span>
+                </div>
+            </div>
+            <h4 style="color:var(--primary); font-size:0.9rem; margin-bottom:15px; margin-left:5px;">Update Password</h4>
+            <div class="form-box">
+                <input type="password" id="new-pass" class="custom-input" placeholder="New Password (Min 6)">
+                <button class="submit-btn" style="margin-top:5px;" onclick="updatePass()">Change Password</button>
+            </div>
+            <button class="submit-btn" style="background:#ff3b30; color:#fff; margin-top:25px;" onclick="logout()">Logout Account</button>
+        </div>
+
+        <div class="bottom-nav">
+            <div class="nav-item active" onclick="changeTab('home', this)"><i class="fas fa-house"></i>HOME</div>
+            <div class="nav-item" onclick="changeTab('deposit', this)"><i class="fas fa-wallet"></i>WALLET</div>
+            <div class="nav-item" onclick="changeTab('gift', this)"><i class="fas fa-gift"></i>GIFT</div>
+            <div class="nav-item" onclick="changeTab('team', this)"><i class="fas fa-users"></i>TEAM</div>
+            <div class="nav-item" onclick="changeTab('account', this)"><i class="fas fa-user-shield"></i>ACCOUNT</div>
+        </div>
+    </div>
+
+    <!-- PLAN PAYMENT MODAL -->
+    <div id="plan-modal-overlay" class="plan-modal-overlay">
+        <div class="plan-modal">
+            <i class="fas fa-times close-modal" onclick="closePlanModal()"></i>
+            <div style="text-align:center; margin-bottom: 15px;">
+                <div style="background: rgba(255, 59, 48, 0.1); width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #ff3b30; font-size: 1.8rem; margin: 0 auto 10px;">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <h3 style="color:#fff; font-size:1.2rem; font-weight:700;">Package Buy Now</h3>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin-top:5px;">প্যাকেজ এক্টিব হলে প্রতি ২৪ঘন্টা পর পর আপনার একাউন্টে ব্যালেন্স যোগ হয়ে যাবে!</p>
+            </div>
+            
+            <div style="background: rgba(56, 151, 240, 0.1); padding: 12px; border-radius: 10px; text-align: center; margin-bottom: 15px;">
+                <h4 style="color: var(--verify-blue); font-size: 1rem;">Fee: <span id="plan-fee-display">0</span> Taka</h4>
+            </div>
+
+            <!-- bKash -->
+            <div class="payment-method-box" style="background: rgba(226, 19, 110, 0.05); border-color: rgba(226, 19, 110, 0.2);">
+                <div class="method-icon" style="background:#e2136e;"><i class="fas fa-paper-plane"></i></div>
+                <div class="method-details">
+                    <p style="color:#e2136e;">BKASH (SEND MONEY)</p>
+                    <h4 id="bkash-num-display">Loading...</h4>
+                </div>
+                <button class="copy-btn" style="color:#e2136e; border-color:#e2136e;" onclick="copyText(document.getElementById('bkash-num-display').innerText)"><i class="far fa-copy"></i> Copy</button>
+            </div>
+
+            <!-- Nagad -->
+            <div class="payment-method-box" style="background: rgba(247, 147, 30, 0.05); border-color: rgba(247, 147, 30, 0.2);">
+                <div class="method-icon" style="background:#f7931e;"><i class="fas fa-wallet"></i></div>
+                <div class="method-details">
+                    <p style="color:#f7931e;">NAGAD (SEND MONEY)</p>
+                    <h4 id="nagad-num-display">Loading...</h4>
+                </div>
+                <button class="copy-btn" style="color:#f7931e; border-color:#f7931e;" onclick="copyText(document.getElementById('nagad-num-display').innerText)"><i class="far fa-copy"></i> Copy</button>
+            </div>
+
+            <input type="number" id="plan-sender-num" class="custom-input" placeholder="আপনার একাউন্ট নম্বর দিন" style="margin-top:10px; background:#1a1b24;">
+            <input type="text" id="plan-trx-id" class="custom-input" placeholder="Enter TrxID" style="background:#1a1b24;">
+            
+            <button class="submit-btn" style="background:#28a745; color:#fff; padding:14px; font-size:1rem; border-radius:10px; margin-top:5px;" onclick="submitPlanRequest()">রিকুয়েস্ট পাঠান</button>
+        </div>
+    </div>
+
+    <!-- DAILY BONUS MODAL -->
+    <div id="daily-modal-overlay" class="daily-modal-overlay">
+        <div class="daily-modal">
+            <div class="daily-icon"><i class="fas fa-gift"></i></div>
+            <h2 style="color:var(--primary); margin-bottom: 10px; font-weight: 800;">Daily Bonus</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">Claim your daily reward up to <b style="color:var(--gold)">৳2</b>.</p>
+            <button class="submit-btn" style="padding: 14px;" onclick="claimDailyBonus()">Claim Reward</button>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 15px; cursor: pointer; text-decoration: underline;" onclick="closeDailyModal()">Skip for now</p>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+          apiKey: "AIzaSyArxvQv9p6G1SeZZn_WU6PrWdVTMLzTUKw",
+          authDomain: "real-task-bd-48971.firebaseapp.com",
+          databaseURL: "https://real-task-bd-48971-default-rtdb.firebaseio.com",
+          projectId: "real-task-bd-48971",
+          storageBucket: "real-task-bd-48971.firebasestorage.app",
+          messagingSenderId: "191328110746",
+          appId: "1:191328110746:web:ce4d6bbbf100e0a5887723",
+          measurementId: "G-WJN4FZ59JM"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+        
+        let currentUserBalance = 0;
+        let hasCheckedDaily = false;
+        let selectedPlanPrice = 0; 
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const refCodeFromURL = urlParams.get('user'); 
+            if(refCodeFromURL) {
+                const refInput = document.getElementById('r-ref');
+                if(refInput) refInput.value = refCodeFromURL;
+                document.getElementById('login-box').classList.add('hidden');
+                document.getElementById('register-box').classList.remove('hidden');
+            }
+
+            db.ref('admin_settings').on('value', snap => {
+                const settings = snap.val() || {};
+                if(settings.notice) document.getElementById('live-notice').innerText = settings.notice;
+                
+                if(settings.bkashNumber) {
+                    document.getElementById('admin-num').innerText = settings.bkashNumber;
+                    document.getElementById('bkash-num-display').innerText = settings.bkashNumber;
+                }
+                
+                if(settings.nagadNumber) {
+                    document.getElementById('nagad-num-display').innerText = settings.nagadNumber;
+                }
+
+                if(settings.income300) document.getElementById('inc-300').innerText = settings.income300;
+                if(settings.income500) document.getElementById('inc-500').innerText = settings.income500;
+                if(settings.income600) document.getElementById('inc-600').innerText = settings.income600;
+                if(settings.income1200) document.getElementById('inc-1200').innerText = settings.income1200;
+                if(settings.income1600) document.getElementById('inc-1600').innerText = settings.income1600;
+                if(settings.income2000) document.getElementById('inc-2000').innerText = settings.income2000;
+            });
+        });
+
+        // ================== NEW: AUTO DAILY INCOME LOGIC ==================
+        function checkAutoDailyIncome(uid) {
+            db.ref('users/' + uid).once('value').then(snap => {
+                let u = snap.val();
+                if(!u || !u.activePlan) return; // শুধু একটিভ প্ল্যান থাকলেই হিসাব হবে
+
+                let now = Date.now();
+                // যদি আগে থেকে lastIncomeClaim না থাকে (পুরনো ইউজারদের জন্য), তাহলে এখনকার সময় বসিয়ে দিবে
+                if (!u.lastIncomeClaim) {
+                    db.ref('users/' + uid).update({ lastIncomeClaim: now });
+                    return;
+                }
+                
+                db.ref('admin_settings').once('value').then(adminSnap => {
+                    let settings = adminSnap.val() || {};
+                    let dailyIncome = Number(settings['income' + u.activePlan] || 0);
+                    if(dailyIncome <= 0) return;
+
+                    // হিসাব করা হচ্ছে কতদিন পার হয়েছে (১ দিন = ৮৬,৪০০,০০০ মিলি-সেকেন্ড)
+                    let daysPassed = Math.floor((now - u.lastIncomeClaim) / 86400000);
+
+                    if(daysPassed > 0) {
+                        let addedMoney = daysPassed * dailyIncome;
+                        db.ref('users/' + uid).update({
+                            mainBalance: Number(u.mainBalance || 0) + addedMoney,
+                            lastIncomeClaim: u.lastIncomeClaim + (daysPassed * 86400000) // টাইম আপডেট করা হলো
+                        }).then(() => {
+                            alert(`🎉 অভিনন্দন! আপনার VIP প্ল্যানের ইনকাম ৳${addedMoney} মেইন ব্যালেন্সে যোগ হয়েছে।`);
+                        });
+                    }
+                });
+            });
+        }
+        // ===================================================================
+
+        function openPlanModal(price) {
+            selectedPlanPrice = price;
+            document.getElementById('plan-fee-display').innerText = price;
+            document.getElementById('plan-modal-overlay').classList.add('active');
+        }
+
+        function closePlanModal() {
+            document.getElementById('plan-modal-overlay').classList.remove('active');
+        }
+
+        function submitPlanRequest() {
+            const senderNum = document.getElementById('plan-sender-num').value;
+            const trxId = document.getElementById('plan-trx-id').value;
+            if(!senderNum || !trxId) { return alert("দয়া করে সেন্ডার নম্বর এবং TrxID সঠিকভাবে দিন!"); }
+            
+            db.ref('plan_requests').push({
+                uid: auth.currentUser.uid,
+                price: selectedPlanPrice,
+                senderNum: senderNum,
+                trxId: trxId,
+                status: 'Pending',
+                time: Date.now()
+            }).then(() => {
+                alert("আপনার প্যাকেজ রিকোয়েস্ট পাঠানো হয়েছে! এডমিন চেক করে এপ্রুভ করবে।");
+                closePlanModal();
+                document.getElementById('plan-sender-num').value = '';
+                document.getElementById('plan-trx-id').value = '';
+            });
+        }
+
+        function checkDailyBonus(uid) {
+            if(hasCheckedDaily) return;
+            hasCheckedDaily = true;
+            db.ref('users/' + uid + '/lastCheckin').once('value').then(snap => {
+                let lastCheckin = snap.val() || 0;
+                if(Date.now() - lastCheckin > 86400000) {
+                    setTimeout(() => { document.getElementById('daily-modal-overlay').classList.add('active'); }, 1500); 
+                }
+            });
+        }
+
+        function claimDailyBonus() {
+            const uid = auth.currentUser.uid;
+            const possibleAmounts = [1, 1.5, 2];
+            const bonusAmount = possibleAmounts[Math.floor(Math.random() * possibleAmounts.length)];
+            db.ref('users/' + uid).once('value').then(snap => {
+                let d = snap.val() || {};
+                let lastCheckin = d.lastCheckin || 0;
+                if(Date.now() - lastCheckin > 86400000) {
+                    db.ref('users/' + uid).update({ profitBalance: Number(d.profitBalance || 0) + bonusAmount, lastCheckin: Date.now() }).then(() => {
+                        closeDailyModal(); alert(`Daily Bonus Claimed! ৳${bonusAmount} added to Bonus Wallet.`);
+                    });
+                } else { alert("Already claimed today!"); closeDailyModal(); }
+            });
+        }
+
+        function closeDailyModal() { document.getElementById('daily-modal-overlay').classList.remove('active'); }
+
+        function showLivePopup() {
+            if(document.getElementById('app-content').classList.contains('hidden')) return;
+            const popup = document.getElementById('live-popup');
+            const text = document.getElementById('popup-text');
+            const prefixes = ['017', '018', '019', '016', '013'];
+            const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+            const amounts = [100, 200, 300, 500, 1000];
+            const amount = amounts[Math.floor(Math.random() * amounts.length)];
+            text.innerHTML = `Member ${prefix}*** <span style="color:var(--gold); font-weight:bold;">৳ ${amount}</span> Withdraw Successful!`;
+            popup.classList.add('show');
+            setTimeout(() => { popup.classList.remove('show'); }, 4000); 
+        }
+        setInterval(showLivePopup, 19000); 
+
+        function toggleAuth() { document.getElementById('login-box').classList.toggle('hidden'); document.getElementById('register-box').classList.toggle('hidden'); }
+        
+        function register() {
+            const email = document.getElementById('r-email').value; 
+            const pass = document.getElementById('r-pass').value; 
+            const name = document.getElementById('r-name').value; 
+            const referer = document.getElementById('r-ref').value;
+            if(!email || !name || pass.length < 6) return alert("Fill all fields correctly!");
+            const numericUID = Math.floor(10000000 + Math.random() * 90000000).toString();
+            
+            auth.createUserWithEmailAndPassword(email, pass).then(res => {
+                db.ref('users/' + res.user.uid).set({ 
+                    name: name, 
+                    email: email, 
+                    mainBalance: 100, 
+                    profitBalance: 0, 
+                    referBalance: 0, 
+                    referredBy: referer || null, 
+                    uid: res.user.uid, 
+                    numericUID: numericUID 
+                }).then(() => {
+                    location.reload();
+                });
+            }).catch(e => alert(e.message));
+        }
+
+        function login() { auth.signInWithEmailAndPassword(document.getElementById('l-email').value, document.getElementById('l-pass').value).catch(e => alert(e.message)); }
+
+        auth.onAuthStateChanged(user => {
+            if(user) {
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('app-content').classList.remove('hidden');
+                
+                // এখানে অটোমেটিক ইনকামের ফাংশন কল করা হলো
+                checkAutoDailyIncome(user.uid); 
+                sync(user.uid, user.email);
+                checkDailyBonus(user.uid); 
+            } else {
+                document.getElementById('auth-screen').classList.remove('hidden');
+                document.getElementById('app-content').classList.add('hidden');
+            }
+        });
+
+        function safeUpdate(id, value) { const el = document.getElementById(id); if (el) el.innerText = value; }
+
+        function sync(uid, email) {
+            safeUpdate('acc-email', email || "No Email");
+
+            db.ref('users/' + uid).on('value', snap => {
+                const d = snap.val() || {};
+                let myNumericUID = d.numericUID;
+                if(!myNumericUID) {
+                    myNumericUID = Math.floor(10000000 + Math.random() * 90000000).toString();
+                    db.ref('users/' + uid).update({ numericUID: myNumericUID, name: d.name || "User" });
+                }
+                safeUpdate('acc-name', d.name || "User");
+                safeUpdate('acc-uid', myNumericUID);
+                safeUpdate('ref-link-team', "https://bdearningzonex.blogspot.com/?user=" + myNumericUID);
+                
+                if(d.activePlan) document.getElementById('acc-plan').innerHTML = `VIP ৳${d.activePlan} <i class="fas fa-check-circle"></i>`;
+                
+                currentUserBalance = Number(d.mainBalance) || 0;
+                safeUpdate('main-bal', "৳ " + currentUserBalance.toFixed(2));
+                safeUpdate('prof-bal', "৳ " + (Number(d.profitBalance) || 0).toFixed(2));
+                safeUpdate('ref-bal', "৳ " + (Number(d.referBalance) || 0).toFixed(2));
+                
+                db.ref('users').orderByChild('referredBy').equalTo(myNumericUID).on('value', refSnap => { 
+                    let tCount = refSnap.numChildren() || 0;
+                    let activeCount = 0;
+                    refSnap.forEach(child => { if(child.val().referBonusGiven) { activeCount++; } });
+                    safeUpdate('team-count', tCount); 
+                    safeUpdate('team-earn', "৳ " + (activeCount * 90).toFixed(2)); 
+                });
+            });
+
+            db.ref('plan_requests').orderByChild('uid').equalTo(uid).on('value', snap => {
+                let html = '';
+                snap.forEach(child => {
+                    let d = child.val();
+                    let date = new Date(d.time).toLocaleDateString();
+                    let color = d.status === 'Approved' ? '#00ffa3' : (d.status === 'Rejected' ? '#ff3b30' : (d.status === 'Expired' ? '#ffcc00' : '#ffcc00'));
+                    let statusText = d.status === 'Approved' ? 'Active' : d.status;
+                    html = `<div class="history-item"><div><p class="h-title">VIP ${d.price}৳ Plan</p><span class="h-date">${date}</span></div><span style="font-size:0.75rem; font-weight:600; color:${color};">${statusText}</span></div>` + html;
+                });
+                document.getElementById('plan-history-list').innerHTML = html || '<p style="text-align:center; color:gray; font-size:0.8rem;">কোনো প্যাকেজ কেনা হয়নি</p>';
+            });
+
+            db.ref('deposits').orderByChild('uid').equalTo(uid).on('value', snap => {
+                let html = ''; snap.forEach(child => { let d = child.val(); let date = new Date(d.time).toLocaleDateString(); let color = d.status === 'Approved' ? '#00ffa3' : (d.status === 'Rejected' ? '#ff3b30' : '#ffcc00'); html = `<div class="history-item"><div><p class="h-title">৳ ${d.amount} - ${d.method}</p><span class="h-date">${date}</span></div><span style="font-size:0.75rem; font-weight:600; color:${color};">${d.status}</span></div>` + html; });
+                document.getElementById('dep-history-list').innerHTML = html || '<p style="text-align:center; color:gray; font-size:0.8rem;">No records</p>';
+            });
+            db.ref('withdraws').orderByChild('uid').equalTo(uid).on('value', snap => {
+                let html = ''; snap.forEach(child => { let d = child.val(); let date = new Date(d.time).toLocaleDateString(); let color = d.status === 'Approved' ? '#00ffa3' : (d.status === 'Rejected' ? '#ff3b30' : '#ffcc00'); html = `<div class="history-item"><div><p class="h-title">৳ ${d.amount} - ${d.method}</p><span class="h-date">${date}</span></div><span style="font-size:0.75rem; font-weight:600; color:${color};">${d.status}</span></div>` + html; });
+                document.getElementById('wit-history-list').innerHTML = html || '<p style="text-align:center; color:gray; font-size:0.8rem;">No records</p>';
+            });
+            db.ref('gifts').orderByChild('uid').equalTo(uid).on('value', snap => {
+                let html = ''; snap.forEach(child => { let d = child.val(); let date = new Date(d.time).toLocaleDateString(); html = `<div class="history-item"><div><p class="h-title">Code: ${d.code}</p><span class="h-date">${date}</span></div><span style="font-size:0.75rem; font-weight:600; color:#00ffa3;">Claimed</span></div>` + html; });
+                document.getElementById('gift-history-list').innerHTML = html || '<p style="text-align:center; color:gray; font-size:0.8rem;">No records</p>';
+            });
+        }
+
+        function transferToMain(walletType) {
+            const uid = auth.currentUser.uid;
+            db.ref('users/' + uid).once('value').then(snap => {
+                let d = snap.val(); let bal = Number(d[walletType] || 0); let mainBal = Number(d.mainBalance || 0);
+                if(bal <= 0) return alert(`No balance!`);
+                if(confirm(`Convert ৳${bal} to Main Wallet?`)) db.ref('users/' + uid).update({ [walletType]: 0, 'mainBalance': mainBal + bal }).then(() => alert(`Converted successfully!`));
+            });
+        }
+
+        function submitDeposit() { 
+            const amt = Number(document.getElementById('d-amt').value); 
+            const trx = document.getElementById('d-trx').value; 
+            if(!amt || !trx || amt < 100) return alert('Min 100৳'); 
+            
+            db.ref('deposits').push({ uid: auth.currentUser.uid, method: document.getElementById('method').value, amount: amt, trx: trx, status: 'Pending', time: Date.now() }); 
+            alert('ডিপোজিট রিকোয়েস্ট পাঠানো হয়েছে! অ্যাডমিন চেক করে এপ্রুভ করলেই আপনার ব্যালেন্সে যোগ হবে।'); 
+            document.getElementById('d-amt').value = ''; document.getElementById('d-trx').value = '';
+        }
+
+        function submitWithdraw() { 
+            const amt = Number(document.getElementById('w-amt').value); 
+            const num = document.getElementById('w-num').value; 
+            if(!amt || !num || amt < 300) return alert('Min 300৳'); 
+            if(amt > currentUserBalance) return alert('Insufficient Balance!'); 
+
+            const uid = auth.currentUser.uid;
+            db.ref('users/' + uid).update({ mainBalance: currentUserBalance - amt }).then(() => {
+                db.ref('withdraws').push({ uid: uid, method: document.getElementById('w-method').value, number: num, amount: amt, status: 'Pending', time: Date.now() }); 
+                alert('উইথড্র রিকোয়েস্ট সফল হয়েছে! আপনার ব্যালেন্স কেটে নেওয়া হয়েছে।'); 
+                document.getElementById('w-amt').value = ''; document.getElementById('w-num').value = '';
+            });
+        }
+
+        function submitGiftCode() { const codeInput = document.getElementById('gift-code').value.trim().toUpperCase(); if(!codeInput) return alert('Enter Code!'); db.ref('admin_settings').once('value').then(adminSnap => { const adminData = adminSnap.val() || {}; if(codeInput !== (adminData.giftCode || "").toUpperCase()) return alert('Invalid Gift Code!'); const uid = auth.currentUser.uid; db.ref('claimed_gifts/' + uid + '/' + codeInput).once('value').then(snap => { if(snap.exists()) { alert('Already claimed!'); } else { db.ref('claimed_gifts/' + uid + '/' + codeInput).set(true); db.ref('gifts').push({ uid: uid, code: codeInput, amount: Number(adminData.giftAmount || 0), time: Date.now() }); db.ref('users/' + uid + '/profitBalance').once('value').then(balSnap => { db.ref('users/' + uid).update({ profitBalance: Number(balSnap.val() || 0) + Number(adminData.giftAmount || 0) }); }); alert(`Success!`); document.getElementById('gift-code').value = ''; } }); }); }
+
+        function changeTab(tabId, element) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
+            document.getElementById(tabId).classList.add('active-page');
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            if(element) element.classList.add('active');
+            window.scrollTo(0,0);
+        }
+
+        function updatePass() { auth.currentUser.updatePassword(document.getElementById('new-pass').value).then(() => alert("Success!")); }
+        function copyRef() { navigator.clipboard.writeText(document.getElementById('ref-link-team').innerText).then(() => alert("Refer Link Copied!")); }
+        function copyText(val) { navigator.clipboard.writeText(val); alert("Copied!"); }
+        function logout() { auth.signOut(); localStorage.clear(); }
+    </script>
+</body>
+  </html>
